@@ -4,86 +4,17 @@
     android:id="@+id/idContainerTop"
     android:layout_width="352dp"
     android:layout_height="339dp"
-    android:orientation="vertical"
-    android:layout_margin="20dp"
+    android:layout_margin="10dp"
     android:layout_gravity="center">
 
-    <LinearLayout
-        android:id="@+id/idContainer1"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight="1"
-        android:orientation="horizontal"
+    <include
+        android:id="@+id/idContainerTopVH"
         android:visibility="visible"
-        android:layout_gravity="left">
+        layout="@layout/activity_sub_vh"/>
 
-        <!--creating image view on below line-->
-        <ImageView
-            android:id="@+id/idTile1"
-            android:layout_height="fill_parent"
-            android:layout_width="fill_parent"
-            android:src="@drawable/baseline_add_24"
-            android:layout_margin="@dimen/img_margin_default"
-            android:layout_weight="1"
-            android:visibility="visible"
-            android:scaleType="centerInside"
-            android:background="@drawable/rounded_corners"
-            android:clipToOutline="true"
-            />
-
-        <!--creating image view on below line-->
-        <ImageView
-            android:id="@+id/idTile3"
-            android:layout_height="fill_parent"
-            android:layout_width="fill_parent"
-            android:src="@drawable/baseline_add_24"
-            android:layout_margin="@dimen/img_margin_default"
-            android:layout_weight="1"
-            android:visibility="gone"
-            android:scaleType="centerInside"
-            android:background="@drawable/rounded_corners"
-            android:clipToOutline="true"
-            />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/idContainer2"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight="1"
-        android:orientation="horizontal"
+    <include
+        android:id="@+id/idContainerTopHV"
         android:visibility="gone"
-        android:layout_gravity="right">
-
-        <!--creating image view on below line-->
-        <ImageView
-            android:id="@+id/idTile2"
-            android:layout_height="fill_parent"
-            android:layout_width="fill_parent"
-            android:src="@drawable/baseline_add_24"
-            android:layout_margin="@dimen/img_margin_default"
-            android:layout_weight="1"
-            android:visibility="visible"
-            android:scaleType="centerInside"
-            android:background="@drawable/rounded_corners"
-            android:clipToOutline="true"
-            />
-
-        <!--creating image view on below line-->
-        <ImageView
-            android:id="@+id/idTile4"
-            android:layout_height="fill_parent"
-            android:layout_width="fill_parent"
-            android:src="@drawable/baseline_add_24"
-            android:layout_margin="@dimen/img_margin_default"
-            android:layout_weight="1"
-            android:visibility="visible"
-            android:scaleType="centerInside"
-            android:background="@drawable/rounded_corners"
-            android:clipToOutline="true"
-            />
-    </LinearLayout>
-
+        layout="@layout/activity_sub_hv"/>
 
 </LinearLayout>

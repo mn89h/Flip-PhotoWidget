@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/idTile3"
+    android:layout_height="fill_parent"
+    android:layout_width="fill_parent"
+    android:src="@drawable/baseline_add_24"
+    android:layout_margin="@dimen/img_margin_default"
+    android:layout_weight="1"
+    android:visibility="gone"
+    android:scaleType="centerInside"
+    android:background="@drawable/rounded_corners"
+    android:clipToOutline="true"
+    />

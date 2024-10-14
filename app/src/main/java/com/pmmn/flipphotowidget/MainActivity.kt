@@ -16,16 +16,23 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 
+enum class Dir(val id: Int) {
+    VERT(0),
+    HORI(1)
+}
+
 class MainActivity : AppCompatActivity() {
 
     // creating variables on below line.
-    lateinit var containerTop: LinearLayout
-    lateinit var container1: LinearLayout
-    lateinit var container2: LinearLayout
+    lateinit var widgetView: View
+    lateinit var containerTop: View
+    lateinit var containerTopHV: LinearLayout
+    lateinit var containerTopVH: LinearLayout
+    var container: List<MutableList<LinearLayout>> = listOf(mutableListOf(), mutableListOf())
+    var tiles: List<MutableList<ImageView>> = listOf(mutableListOf(), mutableListOf())
     lateinit var btnAddTile: Button
     lateinit var btnRemTile: Button
     lateinit var btnCycle: Button
-    var tiles: MutableList<ImageView> = mutableListOf<ImageView>()
 
     private var tileCtr = 1
     private var layout = 0
@@ -43,8 +50,8 @@ class MainActivity : AppCompatActivity() {
                 Log.d("PhotoPicker", "Number of items selected: ${uris.size}")
                 tiles_uris[selected_tile].clear()
                 tiles_uris[selected_tile].addAll(uris)
-                tiles[selected_tile].setImageURI(uris.first())
-                tiles[selected_tile].scaleType = ImageView.ScaleType.CENTER_CROP
+                tiles.forEach{tile -> tile[selected_tile].setImageURI(uris.first())}
+                tiles.forEach{tile -> tile[selected_tile].scaleType = ImageView.ScaleType.CENTER_CROP}
             } else {
                 Log.d("PhotoPicker", "No media selected")
             }
@@ -55,41 +62,44 @@ class MainActivity : AppCompatActivity() {
         val modVisibility = layout % 2
 
         if (modLayout < 2) {
-            containerTop.orientation = LinearLayout.VERTICAL
-            container1.orientation = LinearLayout.HORIZONTAL
-            container2.orientation = LinearLayout.HORIZONTAL
+            containerTopVH.visibility = View.VISIBLE
+            containerTopHV.visibility = View.GONE
         }
         else {
-            containerTop.orientation = LinearLayout.HORIZONTAL
-            container1.orientation = LinearLayout.VERTICAL
-            container2.orientation = LinearLayout.VERTICAL
+            containerTopVH.visibility = View.GONE
+            containerTopHV.visibility = View.VISIBLE
         }
 
-        container1.visibility = View.VISIBLE
-        if (layout == 0)
-            container2.visibility = View.GONE
-        else
-            container2.visibility = View.VISIBLE
+        container.forEach { containerDir -> containerDir[0].visibility = View.VISIBLE }
+        if (layout == 0) {
+            container.forEach { containerDir -> containerDir[1].visibility = View.GONE }
+//            container[1][1].visibility = View.GONE
+        }
+        else {
+            container.forEach { containerDir -> containerDir[1].visibility = View.VISIBLE }
+//            container[1][1].visibility = View.VISIBLE
+//            container[0][1].visibility = View.GONE
+        }
 
-        tiles[0].visibility = View.VISIBLE
-        tiles[1].visibility = View.VISIBLE
+        tiles.forEach{ tileDir -> tileDir[0].visibility = View.VISIBLE }
+        tiles.forEach{ tileDir -> tileDir[1].visibility = View.VISIBLE }
 
         if (layout == 3) {
-            tiles[2].visibility = View.VISIBLE
-            tiles[3].visibility = View.VISIBLE
+            tiles.forEach{ tileDir -> tileDir[2].visibility = View.VISIBLE }
+            tiles.forEach{ tileDir -> tileDir[3].visibility = View.VISIBLE }
         }
         else if (layout < 3) {
-            tiles[2].visibility = View.GONE
-            tiles[3].visibility = View.GONE
+            tiles.forEach{ tileDir -> tileDir[2].visibility = View.GONE }
+            tiles.forEach{ tileDir -> tileDir[3].visibility = View.GONE }
         }
         else {
             if (modVisibility == 0) {
-                tiles[2].visibility = View.VISIBLE
-                tiles[3].visibility = View.GONE
+                tiles.forEach{ tileDir -> tileDir[2].visibility = View.VISIBLE }
+                tiles.forEach{ tileDir -> tileDir[3].visibility = View.GONE }
             }
             else {
-                tiles[2].visibility = View.GONE
-                tiles[3].visibility = View.VISIBLE
+                tiles.forEach{ tileDir -> tileDir[2].visibility = View.GONE }
+                tiles.forEach{ tileDir -> tileDir[3].visibility = View.VISIBLE }
             }
         }
     }
@@ -132,16 +142,25 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // initializing variables on below line.
-        containerTop = findViewById(R.id.idContainerTop)
-        container1 = findViewById(R.id.idContainer1)
-        container2 = findViewById(R.id.idContainer2)
+        widgetView = findViewById(R.id.widget_container)
+        containerTopHV = findViewById(R.id.idContainerTopHV)
+        containerTopVH = findViewById(R.id.idContainerTopVH)
+        container[Dir.VERT.id].add(containerTopVH.findViewById(R.id.idContainer1H))
+        container[Dir.VERT.id].add(containerTopVH.findViewById(R.id.idContainer2H))
+        container[Dir.HORI.id].add(containerTopHV.findViewById(R.id.idContainer1V))
+        container[Dir.HORI.id].add(containerTopHV.findViewById(R.id.idContainer2V))
+        tiles.forEachIndexed { dir, tileDir ->
+            tileDir.add(container[dir][0].findViewById(R.id.idTile1))
+            tileDir.add(container[dir][1].findViewById(R.id.idTile2))
+            tileDir.add(container[dir][0].findViewById(R.id.idTile3))
+            tileDir.add(container[dir][1].findViewById(R.id.idTile4)) }
+//        tileDir.add(container[dir][0].findViewById(R.id.idTile1))
+//        tileDir.add(container[dir][1].findViewById(R.id.idTile2))
+//        tileDir.add(container[dir][0].findViewById(R.id.idTile3))
+//        tileDir.add(container[dir][1].findViewById(R.id.idTile4)) }
         btnAddTile = findViewById(R.id.idBtnAddTile)
         btnRemTile = findViewById(R.id.idBtnRemTile)
         btnCycle = findViewById(R.id.idBtnCycle)
-        tiles.add(findViewById(R.id.idTile1))
-        tiles.add(findViewById(R.id.idTile2))
-        tiles.add(findViewById(R.id.idTile3))
-        tiles.add(findViewById(R.id.idTile4))
 
         btnAddTile.setOnClickListener {
             val tileCtrOld = tileCtr
@@ -166,13 +185,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         // adding click listener for button on below line.
-        tiles.forEachIndexed { i, tile ->
-            tile.setOnClickListener {
-                selected_tile = i
-                pickMultipleMedia.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-                updateWidgetCall()
+        tiles.forEach { tileDir ->
+            tileDir.forEachIndexed { i, tile ->
+                tile.setOnClickListener {
+                    selected_tile = i
+                    pickMultipleMedia.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                    updateWidgetCall()
+                }
             }
         }
 
