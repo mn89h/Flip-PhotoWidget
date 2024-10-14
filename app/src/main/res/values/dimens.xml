@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="button_width">165dp</dimen>
+    <dimen name="close_button_size">50dp</dimen>
+    <dimen name="close_button_padding">5dp</dimen>
+    <dimen name="img_margin_default">15dp</dimen>
+    <dimen name="sdc_calendar_widget_button_container_margin">15dp</dimen>
+    <dimen name="sdc_calendar_widget_list_item_margin">5dp</dimen>
+    <dimen name="sdc_calendar_widget_list_margin">5dp</dimen>
+</resources>
