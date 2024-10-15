@@ -5,41 +5,80 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ListView
 import android.widget.RemoteViews
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-
-enum class Dir(val id: Int) {
-    VERT(0),
-    HORI(1)
-}
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.ReportFragment.Companion.reportFragment
+import com.pmmn.flipphotowidget.SharedData.Companion.layout
+import com.pmmn.flipphotowidget.SharedData.Companion.imageIds
+import com.pmmn.flipphotowidget.SharedData.Companion.images
+import com.pmmn.flipphotowidget.SharedData.Companion.tileIds
+import com.pmmn.flipphotowidget.SharedData.Companion.tiles
+import com.pmmn.flipphotowidget.SharedData.Companion.tiles_uris
+import com.pmmn.flipphotowidget.SharedData.Companion.LayoutDir
+import com.pmmn.flipphotowidget.SharedData.Companion.Layouts
+import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
 
     // creating variables on below line.
-    lateinit var widgetView: View
-    lateinit var containerTop: View
-    lateinit var containerTopHV: LinearLayout
-    lateinit var containerTopVH: LinearLayout
-    var container: List<MutableList<LinearLayout>> = listOf(mutableListOf(), mutableListOf())
-    var tiles: List<MutableList<ImageView>> = listOf(mutableListOf(), mutableListOf())
-    lateinit var btnAddTile: Button
+    private lateinit var btnAddTile: Button
     lateinit var btnRemTile: Button
     lateinit var btnCycle: Button
 
-    private var tileCtr = 1
-    private var layout = 0
+    private lateinit var remoteViews: RemoteViews
+    private lateinit var previewView: View
+    private lateinit var appWidgetManager: AppWidgetManager
+    private lateinit var widgetComponentName: ComponentName
+
 
     private var selected_tile = 1
-    private var tiles_uris: List<MutableList<Uri>> = List(4) { mutableListOf<Uri>() }
 
+    private fun  updateViews() {
+        for (appWidgetId in appWidgetManager.getAppWidgetIds(widgetComponentName)) {
+            // Update the widget using AppWidgetManager
+            appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
+
+
+            // Inflate the RemoteViews into a standard View
+            val remoteViewContainer = findViewById<LinearLayout>(R.id.idPreviewContainer)
+            previewView = remoteViews.apply(applicationContext, remoteViewContainer)
+
+            // Add the inflated RemoteViews to the container
+            remoteViewContainer.removeAllViews()
+            remoteViewContainer.addView(previewView)
+
+
+            imageIds.forEachIndexed { i, imageIdDir ->
+                images[i].clear()
+                imageIdDir.forEach { imageId ->
+                    images[i].add(findViewById(imageId))
+                }
+            }
+
+            // adding click listener for button on below line.
+            images.forEach { imageDir ->
+                imageDir.forEachIndexed { i, image ->
+                    image.setOnClickListener {
+                        selected_tile = i
+                        pickMultipleMedia.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     // Registers a photo picker activity launcher in multi-select mode.
     private val pickMultipleMedia: ActivityResultLauncher<PickVisualMediaRequest> =
@@ -50,8 +89,23 @@ class MainActivity : AppCompatActivity() {
                 Log.d("PhotoPicker", "Number of items selected: ${uris.size}")
                 tiles_uris[selected_tile].clear()
                 tiles_uris[selected_tile].addAll(uris)
-                tiles.forEach{tile -> tile[selected_tile].setImageURI(uris.first())}
-                tiles.forEach{tile -> tile[selected_tile].scaleType = ImageView.ScaleType.CENTER_CROP}
+
+
+                try {
+                    // Load the image from the Uri as a Bitmap
+                    val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, uris.first())
+
+                    // Set the image using setImageViewBitmap
+                    imageIds.forEach { imageIdDir ->
+//                        remoteViews.setImageViewUri(imageIdDir[selected_tile], uris.first())
+                        remoteViews.setImageViewBitmap(imageIdDir[selected_tile], bitmap)
+                    }
+
+                    updateViews()
+
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
             } else {
                 Log.d("PhotoPicker", "No media selected")
             }
@@ -61,47 +115,49 @@ class MainActivity : AppCompatActivity() {
         val modLayout = layout % 4
         val modVisibility = layout % 2
 
-        if (modLayout < 2) {
-            containerTopVH.visibility = View.VISIBLE
-            containerTopHV.visibility = View.GONE
-        }
-        else {
-            containerTopVH.visibility = View.GONE
-            containerTopHV.visibility = View.VISIBLE
-        }
+        val dir = if (modLayout < 2) LayoutDir.VERT.id else LayoutDir.HORI.id
+        val secondTile = if (layout > Layouts.ONE.id) true else false
+        val thirdTile = if (layout >= Layouts.THREE_1.id) true else false
+        val fourthTile = if (layout == Layouts.FOUR.id) true else false
 
-        container.forEach { containerDir -> containerDir[0].visibility = View.VISIBLE }
-        if (layout == 0) {
-            container.forEach { containerDir -> containerDir[1].visibility = View.GONE }
-//            container[1][1].visibility = View.GONE
-        }
-        else {
-            container.forEach { containerDir -> containerDir[1].visibility = View.VISIBLE }
-//            container[1][1].visibility = View.VISIBLE
-//            container[0][1].visibility = View.GONE
-        }
+        val thirdTileNumber = if (modVisibility == 0) 2 else 3
 
-        tiles.forEach{ tileDir -> tileDir[0].visibility = View.VISIBLE }
-        tiles.forEach{ tileDir -> tileDir[1].visibility = View.VISIBLE }
+        remoteViews.setViewVisibility(R.id.idContainerVert, View.GONE)
+        remoteViews.setViewVisibility(R.id.idContainerHori, View.GONE)
 
-        if (layout == 3) {
-            tiles.forEach{ tileDir -> tileDir[2].visibility = View.VISIBLE }
-            tiles.forEach{ tileDir -> tileDir[3].visibility = View.VISIBLE }
-        }
-        else if (layout < 3) {
-            tiles.forEach{ tileDir -> tileDir[2].visibility = View.GONE }
-            tiles.forEach{ tileDir -> tileDir[3].visibility = View.GONE }
-        }
-        else {
-            if (modVisibility == 0) {
-                tiles.forEach{ tileDir -> tileDir[2].visibility = View.VISIBLE }
-                tiles.forEach{ tileDir -> tileDir[3].visibility = View.GONE }
-            }
-            else {
-                tiles.forEach{ tileDir -> tileDir[2].visibility = View.GONE }
-                tiles.forEach{ tileDir -> tileDir[3].visibility = View.VISIBLE }
+        remoteViews.setViewVisibility(R.id.idTiles13V, View.GONE)
+        remoteViews.setViewVisibility(R.id.idTiles13H, View.GONE)
+        remoteViews.setViewVisibility(R.id.idTiles24H, View.GONE)
+        remoteViews.setViewVisibility(R.id.idTiles24V, View.GONE)
+
+        tileIds.forEach { tileIdDir ->
+            tileIdDir.forEach { tileId ->
+                remoteViews.setViewVisibility(tileId, View.GONE)
             }
         }
+
+        if (dir == LayoutDir.VERT.id) {
+            remoteViews.setViewVisibility(R.id.idContainerVert, View.VISIBLE)
+
+            remoteViews.setViewVisibility(R.id.idTiles13H, View.VISIBLE)
+            if (layout > Layouts.ONE.id) remoteViews.setViewVisibility(R.id.idTiles24H, View.VISIBLE)
+        }
+        else {
+            remoteViews.setViewVisibility(R.id.idContainerHori, View.VISIBLE)
+
+            remoteViews.setViewVisibility(R.id.idTiles13V, View.VISIBLE)
+            if (layout > Layouts.ONE.id) remoteViews.setViewVisibility(R.id.idTiles24V, View.VISIBLE)
+        }
+
+        remoteViews.setViewVisibility(tileIds[dir][0], View.VISIBLE)
+        if (secondTile) remoteViews.setViewVisibility(tileIds[dir][1], View.VISIBLE)
+        if (thirdTile) remoteViews.setViewVisibility(tileIds[dir][thirdTileNumber], View.VISIBLE)
+        if (fourthTile) {
+            remoteViews.setViewVisibility(tileIds[dir][2], View.VISIBLE)
+            remoteViews.setViewVisibility(tileIds[dir][3], View.VISIBLE)
+        }
+
+        updateViews()
     }
 
     private fun cycleValue(value: Int, maxValue: Int, minValue: Int = 0, increment: Boolean = true): Int {
@@ -141,82 +197,95 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // initializing variables on below line.
-        widgetView = findViewById(R.id.widget_container)
-        containerTopHV = findViewById(R.id.idContainerTopHV)
-        containerTopVH = findViewById(R.id.idContainerTopVH)
-        container[Dir.VERT.id].add(containerTopVH.findViewById(R.id.idContainer1H))
-        container[Dir.VERT.id].add(containerTopVH.findViewById(R.id.idContainer2H))
-        container[Dir.HORI.id].add(containerTopHV.findViewById(R.id.idContainer1V))
-        container[Dir.HORI.id].add(containerTopHV.findViewById(R.id.idContainer2V))
-        tiles.forEachIndexed { dir, tileDir ->
-            tileDir.add(container[dir][0].findViewById(R.id.idTile1))
-            tileDir.add(container[dir][1].findViewById(R.id.idTile2))
-            tileDir.add(container[dir][0].findViewById(R.id.idTile3))
-            tileDir.add(container[dir][1].findViewById(R.id.idTile4)) }
-//        tileDir.add(container[dir][0].findViewById(R.id.idTile1))
-//        tileDir.add(container[dir][1].findViewById(R.id.idTile2))
-//        tileDir.add(container[dir][0].findViewById(R.id.idTile3))
-//        tileDir.add(container[dir][1].findViewById(R.id.idTile4)) }
+        // Find the container where RemoteViews will be displayed
+        val remoteViewContainer = findViewById<LinearLayout>(R.id.idPreviewContainer)
+
+        // Create a RemoteViews object pointing to the layout
+        remoteViews = RemoteViews(packageName, R.layout.activity_sub)
+
+        // Inflate the RemoteViews into a standard View
+        previewView = remoteViews.apply(this, remoteViewContainer)
+
+        // Add the inflated RemoteViews to the container
+        remoteViewContainer.addView(previewView)
+
+        appWidgetManager = AppWidgetManager.getInstance(this)
+        widgetComponentName = ComponentName(getApplicationContext(), PhotoWidgetProvider::class.java)
+
+        tileIds  = listOf(
+            listOf(R.id.idTile1H, R.id.idTile2H, R.id.idTile3H, R.id.idTile4H),
+            listOf(R.id.idTile1V, R.id.idTile2V, R.id.idTile3V, R.id.idTile4V))
+        tileIds.forEachIndexed { i, tileIdDir ->
+            tileIdDir.forEach { tileId ->
+                tiles[i].add(findViewById(tileId))
+            }
+        }
+        imageIds = listOf(
+            listOf(R.id.idImage1H, R.id.idImage2H, R.id.idImage3H, R.id.idImage4H),
+            listOf(R.id.idImage1V, R.id.idImage2V, R.id.idImage3V, R.id.idImage4V))
+        imageIds.forEachIndexed { i, imageIdDir ->
+            images[i].clear()
+            imageIdDir.forEach { imageId ->
+                images[i].add(findViewById(imageId))
+            }
+        }
+
         btnAddTile = findViewById(R.id.idBtnAddTile)
-        btnRemTile = findViewById(R.id.idBtnRemTile)
-        btnCycle = findViewById(R.id.idBtnCycle)
-
         btnAddTile.setOnClickListener {
-            val tileCtrOld = tileCtr
-            tileCtr = cycleValue(tileCtr, 4, 1, true)
-            layout = resetLayout(layout, tileCtrOld, tileCtr)
+            layout = cycleValue(layout, 7, 0, true)
             updateTileVisibilityAndLayout()
-            updateWidgetCall()
-        }
-
-        btnRemTile.setOnClickListener {
-            val tileCtrOld = tileCtr
-            tileCtr = cycleValue(tileCtr, 4, 1, false)
-            layout = resetLayout(layout, tileCtrOld, tileCtr)
-            updateTileVisibilityAndLayout()
-            updateWidgetCall()
-        }
-
-        btnCycle.setOnClickListener {
-            layout = cycleLayout(layout, tileCtr)
-            updateTileVisibilityAndLayout()
-            updateWidgetCall()
         }
 
         // adding click listener for button on below line.
-        tiles.forEach { tileDir ->
-            tileDir.forEachIndexed { i, tile ->
-                tile.setOnClickListener {
+        images.forEach { imageDir ->
+            imageDir.forEachIndexed { i, image ->
+                image.setOnClickListener {
                     selected_tile = i
                     pickMultipleMedia.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
-                    updateWidgetCall()
                 }
             }
         }
 
+
+//        btnAddTile = findViewById(R.id.idBtnAddTile)
+//        btnRemTile = findViewById(R.id.idBtnRemTile)
+//        btnCycle = findViewById(R.id.idBtnCycle)
+//
+//        btnAddTile.setOnClickListener {
+//            val tileCtrOld = tileCtr
+//            tileCtr = cycleValue(tileCtr, 4, 1, true)
+//            layout = resetLayout(layout, tileCtrOld, tileCtr)
+//            updateTileVisibilityAndLayout()
+//            updateWidgetCall()
+//        }
+//
+//        btnRemTile.setOnClickListener {
+//            val tileCtrOld = tileCtr
+//            tileCtr = cycleValue(tileCtr, 4, 1, false)
+//            layout = resetLayout(layout, tileCtrOld, tileCtr)
+//            updateTileVisibilityAndLayout()
+//            updateWidgetCall()
+//        }
+//
+//        btnCycle.setOnClickListener {
+//            layout = cycleLayout(layout, tileCtr)
+//            updateTileVisibilityAndLayout()
+//            updateWidgetCall()
+//        }
+
+
     }
 
-    private fun updateWidgetCall() {
-        val context = this
-        val appWidgetManager = AppWidgetManager.getInstance(context)
+    private fun updateWidgetVisibility() {
 
-        // Get the component name for your AppWidgetProvider
-        val componentName = ComponentName(context, PhotoWidgetProvider::class.java)
-
-        // Get all app widget IDs associated with this provider
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-
-        // Update the widget layout via RemoteViews
-        for (appWidgetId in appWidgetIds) {
-            val remoteViews = RemoteViews(packageName, R.layout.activity_sub)
-
-            // remoteViews.setImageViewResource(R.id.idTile1, R.drawable.baseline_close_24)
-
+        remoteViews.setViewVisibility(R.id.idTile1H, View.GONE)
+//      remoteViews.setImageViewResource(R.id.idTile1, R.drawable.baseline_close_24)
+        for (appWidgetId in appWidgetManager.getAppWidgetIds(widgetComponentName)) {
             // Update the widget using AppWidgetManager
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
+            remoteViews.reapply(this, previewView)
         }
 
     }

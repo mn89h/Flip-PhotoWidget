@@ -8,12 +8,17 @@
     android:orientation="vertical"
     android:background="@color/md_theme_surfaceContainer"
     tools:context=".MainActivity">
-    <include
-        android:id="@+id/widget_container"
-        layout="@layout/activity_sub"/>
-
 
     <LinearLayout
+        android:layout_weight="1"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="horizontal"
+        android:id="@+id/idPreviewContainer"
+        />
+
+    <LinearLayout
+        android:layout_weight="1"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:orientation="vertical"

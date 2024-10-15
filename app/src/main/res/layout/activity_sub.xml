@@ -1,20 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/idContainerTop"
-    android:layout_width="352dp"
-    android:layout_height="339dp"
-    android:layout_margin="10dp"
-    android:layout_gravity="center">
+    android:id="@+id/widget_container"
+    android:layout_width="340dp"
+    android:layout_height="300dp"
+    android:layout_marginBottom="15dp"
+    android:layout_gravity="top|center">
 
-    <include
-        android:id="@+id/idContainerTopVH"
-        android:visibility="visible"
-        layout="@layout/activity_sub_vh"/>
+    <LinearLayout
+        android:id="@+id/idContainerVert"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="visible">
 
-    <include
-        android:id="@+id/idContainerTopHV"
-        android:visibility="gone"
-        layout="@layout/activity_sub_hv"/>
+        <include
+            layout="@layout/tiles13h"/>
+        <include
+            layout="@layout/tiles24h"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/idContainerHori"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <include
+            layout="@layout/tiles13v"/>
+        <include
+            layout="@layout/tiles24v"/>
+    </LinearLayout>
+
 
 </LinearLayout>
