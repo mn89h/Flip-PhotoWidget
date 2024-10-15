@@ -3,22 +3,27 @@ package com.pmmn.flipphotowidget
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ListView
 import android.widget.RemoteViews
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.ReportFragment.Companion.reportFragment
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.AppWidgetTarget
+import com.bumptech.glide.request.transition.Transition
 import com.pmmn.flipphotowidget.SharedData.Companion.layout
 import com.pmmn.flipphotowidget.SharedData.Companion.imageIds
 import com.pmmn.flipphotowidget.SharedData.Companion.images
@@ -27,7 +32,14 @@ import com.pmmn.flipphotowidget.SharedData.Companion.tiles
 import com.pmmn.flipphotowidget.SharedData.Companion.tiles_uris
 import com.pmmn.flipphotowidget.SharedData.Companion.LayoutDir
 import com.pmmn.flipphotowidget.SharedData.Companion.Layouts
+import com.pmmn.flipphotowidget.SharedData.Companion.imageFutures
+import com.pmmn.flipphotowidget.SharedData.Companion.uri_iterators
+import kotlinx.coroutines.*
 import java.io.IOException
+import java.util.concurrent.CompletableFuture
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,6 +47,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnAddTile: Button
     lateinit var btnRemTile: Button
     lateinit var btnCycle: Button
+    var imageLoaded: Boolean = false
 
     private lateinit var remoteViews: RemoteViews
     private lateinit var previewView: View
@@ -43,6 +56,17 @@ class MainActivity : AppCompatActivity() {
 
 
     private var selected_tile = 1
+
+    // Extension function to convert CompletableFuture to a coroutine-friendly suspend function
+    suspend fun <T> CompletableFuture<T>.await(): T = suspendCoroutine { cont ->
+        this.whenComplete { result, exception ->
+            if (exception == null) {
+                cont.resume(result)
+            } else {
+                cont.resumeWithException(exception)
+            }
+        }
+    }
 
     private fun  updateViews() {
         for (appWidgetId in appWidgetManager.getAppWidgetIds(widgetComponentName)) {
@@ -90,26 +114,71 @@ class MainActivity : AppCompatActivity() {
                 tiles_uris[selected_tile].clear()
                 tiles_uris[selected_tile].addAll(uris)
 
-
-                try {
-                    // Load the image from the Uri as a Bitmap
-                    val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, uris.first())
-
-                    // Set the image using setImageViewBitmap
-                    imageIds.forEach { imageIdDir ->
-//                        remoteViews.setImageViewUri(imageIdDir[selected_tile], uris.first())
-                        remoteViews.setImageViewBitmap(imageIdDir[selected_tile], bitmap)
-                    }
-
-                    updateViews()
-
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
+                updateTileVisibilityAndLayout()
             } else {
                 Log.d("PhotoPicker", "No media selected")
             }
         }
+
+    private fun resetImageView(viewId: Int) {
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(widgetComponentName)
+        appWidgetIds.forEach { appWidgetId ->
+            remoteViews.setImageViewResource(viewId, R.drawable.baseline_add_350)
+        }
+    }
+
+    private fun loadImageView(imageNo: Int, viewId: Int) {
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(widgetComponentName)
+        appWidgetIds.forEach { appWidgetId ->
+            val awt: AppWidgetTarget = object : AppWidgetTarget(applicationContext, viewId, remoteViews, appWidgetId) {
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    super.onResourceReady(resource, transition)
+                }
+            }
+
+            if (tiles_uris[imageNo].isNotEmpty()) {
+                imageFutures[imageNo] = CompletableFuture()
+                var uri: Uri
+                if (uri_iterators[imageNo].hasNext()) {
+                    uri = uri_iterators[imageNo].next()
+                } else {
+                    uri_iterators[imageNo] = tiles_uris[imageNo].iterator()
+                    uri = uri_iterators[imageNo].next()
+                }
+
+                Glide
+                    .with(applicationContext)
+                    .asBitmap()
+                    .load(uri)
+                    .listener(object : RequestListener<Bitmap?> {
+                        override fun onLoadFailed(
+                            e: GlideException?,
+                            model: Any?,
+                            target: Target<Bitmap?>,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            Toast.makeText(applicationContext, "Failed to load image", Toast.LENGTH_SHORT).show()
+                            imageFutures[imageNo].complete(true)
+                            return false
+                        }
+
+                        override fun onResourceReady(
+                            resource: Bitmap,
+                            model: Any,
+                            target: Target<Bitmap?>?,
+                            dataSource: DataSource,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            imageFutures[imageNo].complete(true)
+                            return false
+                        }
+                    })
+                    .override(300, 300)
+                    .into(awt)
+
+            }
+        }
+    }
 
     private fun updateTileVisibilityAndLayout() {
         val modLayout = layout % 4
@@ -149,15 +218,40 @@ class MainActivity : AppCompatActivity() {
             if (layout > Layouts.ONE.id) remoteViews.setViewVisibility(R.id.idTiles24V, View.VISIBLE)
         }
 
+        imageIds.forEach { imageIdDir ->
+            imageIdDir.forEach { imageId ->
+                resetImageView(imageId)
+            }
+        }
+
         remoteViews.setViewVisibility(tileIds[dir][0], View.VISIBLE)
-        if (secondTile) remoteViews.setViewVisibility(tileIds[dir][1], View.VISIBLE)
-        if (thirdTile) remoteViews.setViewVisibility(tileIds[dir][thirdTileNumber], View.VISIBLE)
+        loadImageView(0, imageIds[dir][0])
+        if (secondTile) {
+            remoteViews.setViewVisibility(tileIds[dir][1], View.VISIBLE)
+            loadImageView(1, imageIds[dir][1])
+        }
+        if (thirdTile) {
+            remoteViews.setViewVisibility(tileIds[dir][thirdTileNumber], View.VISIBLE)
+            loadImageView(2, imageIds[dir][thirdTileNumber])
+        }
         if (fourthTile) {
             remoteViews.setViewVisibility(tileIds[dir][2], View.VISIBLE)
             remoteViews.setViewVisibility(tileIds[dir][3], View.VISIBLE)
+            loadImageView(2, imageIds[dir][2])
+            loadImageView(3, imageIds[dir][3])
         }
 
-        updateViews()
+        // Needed coroutine in a non-blocking way, allowing Glide to run on the main thread
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                imageFutures.forEach { future ->
+                    future.await()  // Non-blocking wait for the future to complete
+                }
+                updateViews()
+            } catch (e: Exception) {
+                println("Failed: ${e.message}")
+            }
+        }
     }
 
     private fun cycleValue(value: Int, maxValue: Int, minValue: Int = 0, increment: Boolean = true): Int {

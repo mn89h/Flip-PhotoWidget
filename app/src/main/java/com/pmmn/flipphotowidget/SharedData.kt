@@ -9,6 +9,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RemoteViews
 import com.bumptech.glide.request.target.AppWidgetTarget
+import java.util.concurrent.CompletableFuture
 
 
 class SharedData {
@@ -35,8 +36,11 @@ class SharedData {
         var tiles: List<MutableList<LinearLayout>> = listOf(mutableListOf(), mutableListOf())
         lateinit var imageIds: List<List<Int>>
         var images: List<MutableList<ImageView>> = listOf(mutableListOf(), mutableListOf())
+        var imageFutures: MutableList<CompletableFuture<Boolean>> = MutableList(4) {
+                CompletableFuture.completedFuture(true)}
         var tiles_uris: List<MutableList<Uri>> = List(4) { mutableListOf<Uri>() }
-        lateinit var uri_iterators: List<Iterator<Uri>>
+        var uri_iterators: MutableList<Iterator<Uri>> = mutableListOf(
+                tiles_uris[0].iterator(), tiles_uris[1].iterator(), tiles_uris[2].iterator(), tiles_uris[3].iterator())
 
 //        // Save the current state of the shared data to SharedPreferences
 //        fun saveToPreferences(context: Context) {
