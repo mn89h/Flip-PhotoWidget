@@ -1,0 +1,20 @@
+title: "Flip PhotoWidget"
+description: "A customizable photo widget designed exclusively for Samsung Flip phones."
+baseurl: "/flip-photowidget"  # the subpath of your site, e.g. /flip-photowidget
+url: "https://mn89h.github.io"  # your GitHub Pages URL
+
+theme: jekyll-theme-minimal
+
+# Exclude certain files from being processed by Jekyll
+exclude:
+  - README.md
+
+# Add custom logo
+header_pages: 
+  - index.md
+
+# Custom logo path
+logo: "/logo.png"
+
+# Markdown settings
+markdown: kramdown
