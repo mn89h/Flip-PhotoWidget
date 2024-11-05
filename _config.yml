@@ -9,10 +9,6 @@ theme: jekyll-theme-minimal
 exclude:
   - README.md
 
-# Add custom logo
-header_pages: 
-  - index.md
-
 # Custom logo path
 logo: "/logo.png"
 
