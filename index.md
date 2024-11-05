@@ -6,7 +6,6 @@ layout: default
 
 A customizable photo widget designed exclusively for the cover screen of Samsung Flip phones (Galaxy Z Flip5+).
 
-## Long Description
 Transform your Samsung Flip phone's cover screen with this versatile photo widget app, designed to take full advantage of the unique form factor. This widget allows you to easily select photos directly from your Google Photos albums, making it simple to display your memories or favorite images.
 
 With a variety of layout options, you can cycle between designs to find the one that best fits your style and needs. Each tile within the widget is interactive — simply tap a tile to change the photo it displays, creating a dynamic and personalized experience.
