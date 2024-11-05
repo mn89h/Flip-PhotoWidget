@@ -4,7 +4,7 @@
     android:updatePeriodMillis="86400000"
     android:previewLayout="@layout/activity_sub"
     android:initialLayout="@layout/activity_sub"
-    android:configure="com.samsung.android.samplewidget.activity.EditSettingActivity"
+    android:configure="com.pmmn.flipphotowidget.MainActivity"
     android:minWidth="352dp"
     android:minHeight="339dp"
     android:resizeMode="horizontal|vertical"

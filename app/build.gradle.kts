@@ -7,6 +7,7 @@ android {
     namespace = "com.pmmn.flipphotowidget"
     compileSdk = 34
 
+
     defaultConfig {
         applicationId = "com.pmmn.flipphotowidget"
         minSdk = 33
@@ -35,8 +36,16 @@ android {
     }
 }
 
-dependencies {
+tasks.register("uninstallApk", Exec::class) {
+    commandLine = listOf("D:\\Android\\SDK\\platform-tools\\adb", "uninstall", "com.pmmn.flipphotowidget")
+    isIgnoreExitValue = true  // Ignore failures in this task
+}
 
+tasks.named("preBuild").configure {
+    dependsOn("uninstallApk")
+}
+
+dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
