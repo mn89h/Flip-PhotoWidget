@@ -1,5 +1,0 @@
-<!-- Add display type below-->
-<samsung-appwidget-provider
-    xmlns:samsung="http://schemas.samsung.com/android/1"
-    display="sub_screen">
-</samsung-appwidget-provider>

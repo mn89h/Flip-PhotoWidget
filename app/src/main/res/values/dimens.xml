@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <dimen name="button_width">165dp</dimen>
-    <dimen name="close_button_size">50dp</dimen>
-    <dimen name="close_button_padding">5dp</dimen>
-    <dimen name="img_margin_default">8dp</dimen>
-    <dimen name="corner_radius">20dp</dimen>
-</resources>
