@@ -3,9 +3,7 @@ description: "A customizable photo widget designed exclusively for Samsung Flip 
 baseurl: "/flip-photowidget"  # the subpath of your site, e.g. /flip-photowidget
 url: "https://mn89h.github.io"  # your GitHub Pages URL
 
-remote_theme: pages-themes/minimal@v0.2.0
-plugins:
-- jekyll-remote-theme
+theme: jekyll-theme-minimal
 
 # Exclude certain files from being processed by Jekyll
 exclude:
